@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useState, useCallback } from "react"
+import { useMemo, useState, useCallback, useRef, useEffect } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -9,7 +9,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select"
 import {
-  generateDemoCalls, demoSalesReps, demoPackages,
+  generateDemoCalls, demoSalesReps,
   statusLabels, statusColors,
   paymentStatusLabels, paymentStatusColors,
   patientTypeLabels, referralSourceLabels,
@@ -20,8 +20,8 @@ import { CallFormDialog } from "@/components/dashboard/call-form-dialog"
 import { CallDetailSheet } from "@/components/dashboard/call-detail-sheet"
 import {
   ChevronLeft, ChevronRight, Plus, CheckCircle, XCircle,
-  Phone, CreditCard, AlertCircle, Search, X, Save,
-  CircleDot, Edit3,
+  Phone, CreditCard, AlertCircle, Search, X,
+  CircleDot, ChevronDown,
 } from "lucide-react"
 import type { Call, CallStatus, PaymentStatus, PatientType, ReferralSource, ReviewStatus } from "@/lib/types/database"
 
@@ -48,19 +48,124 @@ const reviewStatusIcons: Record<ReviewStatus, typeof CheckCircle> = {
   needs_edit: CircleDot,
 }
 
+// ─── 클릭시 드롭다운 뱃지 ──────────────────────────────────────
+function DropdownBadge<T extends string>({
+  value,
+  options,
+  colorMap,
+  onChange,
+}: {
+  value: T
+  options: Record<string, string>
+  colorMap: Record<string, string>
+  onChange: (v: T) => void
+}) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!open) return
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener("mousedown", handler)
+    return () => document.removeEventListener("mousedown", handler)
+  }, [open])
+
+  return (
+    <div className="relative inline-block" ref={ref}>
+      <Badge
+        variant="secondary"
+        className={`${colorMap[value] || ""} text-[10px] cursor-pointer select-none hover:opacity-80 transition-opacity`}
+        onClick={(e) => { e.stopPropagation(); setOpen(!open) }}
+      >
+        {options[value] || value}
+        <ChevronDown className="h-2.5 w-2.5 ml-0.5 opacity-60" />
+      </Badge>
+      {open && (
+        <div className="absolute z-50 top-full left-0 mt-1 bg-white border rounded-md shadow-lg py-1 min-w-[90px]">
+          {Object.entries(options).map(([k, label]) => (
+            <button
+              key={k}
+              className={`block w-full text-left px-3 py-1.5 text-xs hover:bg-gray-100 transition-colors ${k === value ? "font-semibold bg-gray-50" : ""}`}
+              onClick={(e) => { e.stopPropagation(); onChange(k as T); setOpen(false) }}
+            >
+              <span className={`inline-block w-2 h-2 rounded-full mr-1.5 ${(colorMap[k] || "").split(" ")[0]}`} />
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─── 클릭시 인라인 숫자 편집 ────────────────────────────────────
+function InlineAmount({
+  value,
+  onChange,
+}: {
+  value: number
+  onChange: (v: number) => void
+}) {
+  const [editing, setEditing] = useState(false)
+  const [draft, setDraft] = useState("")
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  const startEdit = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    setDraft(value > 0 ? String(value) : "")
+    setEditing(true)
+  }
+
+  useEffect(() => {
+    if (editing && inputRef.current) inputRef.current.focus()
+  }, [editing])
+
+  const commit = () => {
+    onChange(Number(draft) || 0)
+    setEditing(false)
+  }
+
+  if (editing) {
+    return (
+      <input
+        ref={inputRef}
+        type="number"
+        min={0}
+        step={10000}
+        value={draft}
+        onChange={(e) => setDraft(e.target.value)}
+        onBlur={commit}
+        onKeyDown={(e) => { if (e.key === "Enter") commit(); if (e.key === "Escape") setEditing(false) }}
+        onClick={(e) => e.stopPropagation()}
+        className="w-24 h-6 text-xs text-right border rounded px-1.5 outline-none focus:ring-1 focus:ring-emerald-500"
+        placeholder="금액 입력"
+      />
+    )
+  }
+
+  return (
+    <span
+      className="text-sm font-medium cursor-pointer hover:bg-gray-100 rounded px-1.5 py-0.5 transition-colors border border-transparent hover:border-gray-300"
+      onClick={startEdit}
+      title="클릭하여 금액 수정"
+    >
+      {value > 0 ? formatKRW(value) : <span className="text-muted-foreground text-xs">금액입력</span>}
+    </span>
+  )
+}
+
 // ─── Inline Editable Card ─────────────────────────────────────
 interface InlineCardProps {
   call: Call
   onFieldChange: (id: string, field: string, value: unknown) => void
   onReviewToggle: (id: string) => void
   onOpenDetail: (call: Call) => void
-  onOpenEdit: (call: Call) => void
 }
 
-function InlineEditCard({ call, onFieldChange, onReviewToggle, onOpenDetail, onOpenEdit }: InlineCardProps) {
-  const [expanded, setExpanded] = useState(false)
+function InlineEditCard({ call, onFieldChange, onReviewToggle, onOpenDetail }: InlineCardProps) {
   const rep = demoSalesReps.find((r) => r.id === call.sales_rep_id)
-
   const reviewStatus = call.review_status || "unreviewed"
   const ReviewIcon = reviewStatusIcons[reviewStatus]
 
@@ -70,27 +175,28 @@ function InlineEditCard({ call, onFieldChange, onReviewToggle, onOpenDetail, onO
       ? "border-l-red-400"
       : "border-l-yellow-400"
 
-  const handleToggleExpand = (e: React.MouseEvent) => {
-    e.stopPropagation()
-    setExpanded(!expanded)
-  }
-
   return (
     <Card className={`transition-all hover:shadow-md border-l-4 ${borderColor}`}>
       <CardContent className="p-4">
-        {/* ── 상단 요약 ── */}
-        <div className="flex items-start justify-between cursor-pointer" onClick={handleToggleExpand}>
+        {/* ── 상단: 고객정보 + 클릭 가능한 뱃지들 ── */}
+        <div className="flex items-start justify-between">
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-1.5">
+            <div className="flex items-center gap-2 mb-1.5 flex-wrap">
               <span className="font-semibold">{call.customer_name}</span>
-              <Badge variant="outline" className="text-[10px]">
-                {patientTypeLabels[call.patient_type as PatientType]}
-              </Badge>
-              {call.referral_source && (
-                <Badge variant="outline" className="text-[10px]">
-                  {referralSourceLabels[call.referral_source as ReferralSource]}
-                </Badge>
-              )}
+              {/* 유형구분: 클릭 → 드롭다운 */}
+              <DropdownBadge
+                value={call.patient_type as PatientType}
+                options={patientTypeLabels}
+                colorMap={{ new: "bg-blue-50 text-blue-700", returning: "bg-purple-50 text-purple-700" }}
+                onChange={(v) => onFieldChange(call.id, "patient_type", v)}
+              />
+              {/* 채널구분: 클릭 → 드롭다운 */}
+              <DropdownBadge
+                value={call.referral_source as ReferralSource || "none" as string}
+                options={{ none: "채널미정", ...referralSourceLabels }}
+                colorMap={{ none: "bg-gray-100 text-gray-600", ad: "bg-orange-50 text-orange-700", organic: "bg-teal-50 text-teal-700" }}
+                onChange={(v: string) => onFieldChange(call.id, "referral_source", v === "none" ? undefined : v)}
+              />
             </div>
             <div className="flex items-center gap-3 text-sm text-muted-foreground">
               <span>{rep?.name}</span>
@@ -98,213 +204,61 @@ function InlineEditCard({ call, onFieldChange, onReviewToggle, onOpenDetail, onO
               {call.package_name && <span className="truncate max-w-[150px]">{call.package_name}</span>}
             </div>
           </div>
+
           <div className="flex flex-col items-end gap-1.5 ml-4">
+            {/* 상담상태 + 결제상태: 클릭 → 드롭다운 */}
             <div className="flex items-center gap-1.5">
-              <Badge variant="secondary" className={statusColors[call.status as CallStatus] + " text-[10px]"}>
-                {statusLabels[call.status as CallStatus]}
-              </Badge>
-              <Badge variant="secondary" className={paymentStatusColors[call.payment_status as PaymentStatus] + " text-[10px]"}>
-                {paymentStatusLabels[call.payment_status as PaymentStatus]}
-              </Badge>
+              <DropdownBadge
+                value={call.status as CallStatus}
+                options={statusLabels}
+                colorMap={statusColors}
+                onChange={(v) => onFieldChange(call.id, "status", v)}
+              />
+              <DropdownBadge
+                value={call.payment_status as PaymentStatus}
+                options={paymentStatusLabels}
+                colorMap={paymentStatusColors}
+                onChange={(v) => onFieldChange(call.id, "payment_status", v)}
+              />
             </div>
-            {call.payment_amount > 0 && (
-              <span className="text-sm font-medium">{formatKRW(call.payment_amount)}</span>
-            )}
+            {/* 결제금액: 클릭 → 인라인 입력 */}
+            <InlineAmount
+              value={call.payment_amount}
+              onChange={(v) => onFieldChange(call.id, "payment_amount", v)}
+            />
             {call.drop_reason && (
               <span className="text-xs text-red-500">{call.drop_reason}</span>
             )}
           </div>
         </div>
 
-        {/* ── 인라인 편집 영역 (확장 시) ── */}
-        {expanded && (
-          <div className="mt-3 pt-3 border-t space-y-3" onClick={(e) => e.stopPropagation()}>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              {/* 결제유무 */}
-              <div className="space-y-1">
-                <label className="text-xs text-muted-foreground font-medium">결제상태</label>
-                <Select
-                  value={call.payment_status}
-                  onValueChange={(v) => onFieldChange(call.id, "payment_status", v)}
-                >
-                  <SelectTrigger className="h-8 text-xs">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Object.entries(paymentStatusLabels).map(([k, v]) => (
-                      <SelectItem key={k} value={k}>{v}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* 채널구분 (유입경로) */}
-              <div className="space-y-1">
-                <label className="text-xs text-muted-foreground font-medium">채널구분</label>
-                <Select
-                  value={call.referral_source || "none"}
-                  onValueChange={(v) => onFieldChange(call.id, "referral_source", v === "none" ? undefined : v)}
-                >
-                  <SelectTrigger className="h-8 text-xs">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">미지정</SelectItem>
-                    {Object.entries(referralSourceLabels).map(([k, v]) => (
-                      <SelectItem key={k} value={k}>{v}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* 유형구분 (신환/구환) */}
-              <div className="space-y-1">
-                <label className="text-xs text-muted-foreground font-medium">유형구분</label>
-                <Select
-                  value={call.patient_type}
-                  onValueChange={(v) => onFieldChange(call.id, "patient_type", v)}
-                >
-                  <SelectTrigger className="h-8 text-xs">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Object.entries(patientTypeLabels).map(([k, v]) => (
-                      <SelectItem key={k} value={k}>{v}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* 결제금액 */}
-              <div className="space-y-1">
-                <label className="text-xs text-muted-foreground font-medium">결제금액</label>
-                <Input
-                  type="number"
-                  min={0}
-                  step={10000}
-                  className="h-8 text-xs"
-                  value={call.payment_amount || ""}
-                  onChange={(e) => onFieldChange(call.id, "payment_amount", Number(e.target.value) || 0)}
-                  placeholder="0"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              {/* 상담상태 */}
-              <div className="space-y-1">
-                <label className="text-xs text-muted-foreground font-medium">상담상태</label>
-                <Select
-                  value={call.status}
-                  onValueChange={(v) => onFieldChange(call.id, "status", v)}
-                >
-                  <SelectTrigger className="h-8 text-xs">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Object.entries(statusLabels).map(([k, v]) => (
-                      <SelectItem key={k} value={k}>{v}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* 담당자 */}
-              <div className="space-y-1">
-                <label className="text-xs text-muted-foreground font-medium">담당자</label>
-                <Select
-                  value={call.sales_rep_id}
-                  onValueChange={(v) => onFieldChange(call.id, "sales_rep_id", v)}
-                >
-                  <SelectTrigger className="h-8 text-xs">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {demoSalesReps.map((r) => (
-                      <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* 패키지 */}
-              <div className="space-y-1">
-                <label className="text-xs text-muted-foreground font-medium">패키지</label>
-                <Select
-                  value={call.package_name || "none"}
-                  onValueChange={(v) => onFieldChange(call.id, "package_name", v === "none" ? undefined : v)}
-                >
-                  <SelectTrigger className="h-8 text-xs">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">미지정</SelectItem>
-                    {demoPackages.filter((p) => p.is_active).map((p) => (
-                      <SelectItem key={p.id} value={p.name}>{p.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* 메모 간단 입력 */}
-              <div className="space-y-1">
-                <label className="text-xs text-muted-foreground font-medium">메모</label>
-                <Input
-                  className="h-8 text-xs"
-                  value={call.notes || ""}
-                  onChange={(e) => onFieldChange(call.id, "notes", e.target.value)}
-                  placeholder="메모 입력..."
-                />
-              </div>
-            </div>
-
-            {/* 하단 전체수정 링크 */}
-            <div className="flex justify-end">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-7 text-xs text-muted-foreground hover:text-foreground"
-                onClick={() => onOpenEdit(call)}
-              >
-                <Edit3 className="h-3 w-3 mr-1" /> 전체 수정 (상세)
-              </Button>
-            </div>
-          </div>
-        )}
-
         {/* ── 하단 액션 바 ── */}
         <div className="flex items-center justify-between mt-3 pt-3 border-t">
-          <div className="flex items-center gap-1 text-sm">
-            <ReviewIcon className={`h-3.5 w-3.5 ${
+          {/* 리뷰 상태: 클릭 → 토글 순환 */}
+          <div
+            className="flex items-center gap-1.5 cursor-pointer select-none"
+            onClick={(e) => { e.stopPropagation(); onReviewToggle(call.id) }}
+            title="클릭하여 상태 변경: 미확인 → 확인 → 수정필요"
+          >
+            <ReviewIcon className={`h-4 w-4 ${
               reviewStatus === "reviewed" ? "text-green-600" :
               reviewStatus === "needs_edit" ? "text-red-600" : "text-yellow-600"
             }`} />
             <Badge
               variant="secondary"
-              className={`${reviewStatusColors[reviewStatus]} text-[10px] cursor-pointer select-none`}
-              onClick={(e) => { e.stopPropagation(); onReviewToggle(call.id) }}
+              className={`${reviewStatusColors[reviewStatus]} text-[11px] cursor-pointer`}
             >
               {reviewStatusLabels[reviewStatus]}
             </Badge>
           </div>
-          <div className="flex gap-1.5" onClick={(e) => e.stopPropagation()}>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-7 text-xs text-muted-foreground"
-              onClick={() => onOpenDetail(call)}
-            >
-              상세보기
-            </Button>
-            <Button
-              variant={expanded ? "default" : "outline"}
-              size="sm"
-              className={`h-7 text-xs ${expanded ? "bg-emerald-600 hover:bg-emerald-700" : ""}`}
-              onClick={handleToggleExpand}
-            >
-              {expanded ? <><Save className="h-3 w-3 mr-1" /> 접기</> : <><Edit3 className="h-3 w-3 mr-1" /> 빠른수정</>}
-            </Button>
-          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 text-xs text-muted-foreground hover:text-foreground"
+            onClick={(e) => { e.stopPropagation(); onOpenDetail(call) }}
+          >
+            상세보기
+          </Button>
         </div>
       </CardContent>
     </Card>
@@ -630,7 +584,6 @@ export default function DailyReviewPage() {
               onFieldChange={handleFieldChange}
               onReviewToggle={handleReviewToggle}
               onOpenDetail={openDetail}
-              onOpenEdit={openEdit}
             />
           ))
         )}
