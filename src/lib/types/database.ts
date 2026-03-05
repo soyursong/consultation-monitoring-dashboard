@@ -128,7 +128,6 @@ export interface Call {
   call_date: string
   call_time?: string
   duration_seconds: number
-  consultation_score?: number
   status: CallStatus
   payment_status: PaymentStatus
   payment_amount: number
@@ -136,6 +135,7 @@ export interface Call {
   is_confirmed: boolean
   confirmed_by?: string // 확정한 사용자 ID (코디)
   notes?: string
+  is_active: boolean
   created_at: string
   sales_rep?: SalesRep
 }
@@ -162,7 +162,7 @@ export interface Database {
       sales_reps: { Row: SalesRep; Insert: Omit<SalesRep, 'id'>; Update: Partial<Omit<SalesRep, 'id'>> }
       plaud_tokens: { Row: PlaudToken; Insert: Omit<PlaudToken, 'id' | 'created_at'>; Update: Partial<Omit<PlaudToken, 'id' | 'created_at'>> }
       packages: { Row: Package; Insert: Omit<Package, 'id'>; Update: Partial<Omit<Package, 'id'>> }
-      calls: { Row: Call; Insert: Omit<Call, 'id' | 'created_at' | 'sales_rep'>; Update: Partial<Omit<Call, 'id' | 'created_at' | 'sales_rep'>> }
+      calls: { Row: Call; Insert: Omit<Call, 'id' | 'created_at' | 'sales_rep' | 'is_active'>; Update: Partial<Omit<Call, 'id' | 'created_at' | 'sales_rep'>> }
       recordings: { Row: Recording; Insert: Omit<Recording, 'id' | 'created_at'>; Update: Partial<Omit<Recording, 'id' | 'created_at'>> }
     }
     Views: Record<string, never>

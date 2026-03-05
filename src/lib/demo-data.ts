@@ -132,10 +132,6 @@ export function generateDemoCalls(): Call[] {
         dropReason = dropReasons[Math.floor(seededRandom(seed + 9) * dropReasons.length)]
       }
 
-      const consultationScore = status === 'completed' && paymentStatus !== 'unpaid'
-        ? Math.floor(seededRandom(seed + 10) * 3) + 7
-        : Math.floor(seededRandom(seed + 10) * 5) + 4
-
       const durationMinutes = Math.floor(seededRandom(seed + 11) * 45) + 5
       const durationSeconds = durationMinutes * 60
 
@@ -143,6 +139,9 @@ export function generateDemoCalls(): Call[] {
       const hour = hours[Math.floor(seededRandom(seed + 12) * hours.length)]
       const minute = Math.floor(seededRandom(seed + 13) * 60)
       const callTime = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`
+
+      // 일부 데이터를 비활성화 처리 (테스트용)
+      const isActive = !(dayOffset === 5 && i === 0) && !(dayOffset === 10 && i === 1)
 
       calls.push({
         id: `call-${dayOffset}-${i}`,
@@ -155,7 +154,6 @@ export function generateDemoCalls(): Call[] {
         call_date: dateStr,
         call_time: callTime,
         duration_seconds: durationSeconds,
-        consultation_score: consultationScore,
         status,
         payment_status: paymentStatus,
         payment_amount: paymentAmount,
@@ -166,6 +164,7 @@ export function generateDemoCalls(): Call[] {
           : dropReason
             ? `${pkg.name} 상담 - 이탈사유: ${dropReason}`
             : `${pkg.name} 상담 진행 중`,
+        is_active: isActive,
         created_at: dateStr,
         sales_rep: rep,
       })

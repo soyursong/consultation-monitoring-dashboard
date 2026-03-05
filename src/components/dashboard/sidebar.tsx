@@ -7,6 +7,7 @@ import {
   LayoutDashboard,
   Users,
   PhoneCall,
+  ClipboardCheck,
   Brain,
   Settings,
   LogOut,
@@ -16,7 +17,8 @@ import {
 const navigation = [
   { name: "대시보드", href: "/dashboard", icon: LayoutDashboard },
   { name: "세일즈 담당자", href: "/dashboard/reps", icon: Users },
-  { name: "상담 기록", href: "/dashboard/calls", icon: PhoneCall },
+  { name: "일일 확인", href: "/dashboard/daily-review", icon: ClipboardCheck },
+  { name: "상담 관리", href: "/dashboard/calls", icon: PhoneCall },
   { name: "AI 분석", href: "/dashboard/ai-analysis", icon: Brain },
   { name: "설정", href: "/dashboard/settings", icon: Settings },
 ]

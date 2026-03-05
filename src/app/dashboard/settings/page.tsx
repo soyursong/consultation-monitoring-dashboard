@@ -12,9 +12,10 @@ import {
 } from "@/components/ui/table"
 import {
   Settings, Key, Users, Plus, Trash2, RefreshCw, Eye, EyeOff,
-  Shield, CheckCircle2, XCircle, Building2,
+  Shield, CheckCircle2, XCircle, Building2, Package, Pencil,
 } from "lucide-react"
-import { demoSalesReps, demoUsers, demoPlaudTokens, demoCenter } from "@/lib/demo-data"
+import type { Package as PackageType } from "@/lib/types/database"
+import { demoSalesReps, demoUsers, demoPlaudTokens, demoCenter, demoPackages } from "@/lib/demo-data"
 import { USER_ROLE_LABELS, ROLE_PERMISSIONS } from "@/lib/types/database"
 import type { UserRole } from "@/lib/types/database"
 
@@ -31,6 +32,15 @@ export default function SettingsPage() {
   const [newTokenRepId, setNewTokenRepId] = useState<string>("")
   const [newTokenLabel, setNewTokenLabel] = useState("")
   const [newTokenValue, setNewTokenValue] = useState("")
+
+  // Package management state
+  const [packages, setPackages] = useState<PackageType[]>(() => [...demoPackages])
+  const [showAddPkg, setShowAddPkg] = useState(false)
+  const [newPkgName, setNewPkgName] = useState("")
+  const [newPkgPrice, setNewPkgPrice] = useState("")
+  const [editingPkgId, setEditingPkgId] = useState<string | null>(null)
+  const [editPkgName, setEditPkgName] = useState("")
+  const [editPkgPrice, setEditPkgPrice] = useState("")
 
   const toggleTokenVisibility = (tokenId: string) => {
     setShowTokenMap((prev) => ({ ...prev, [tokenId]: !prev[tokenId] }))
@@ -68,6 +78,10 @@ export default function SettingsPage() {
           <TabsTrigger value="plaud" className="gap-1.5">
             <Key className="h-4 w-4" />
             플라우드 토큰
+          </TabsTrigger>
+          <TabsTrigger value="packages" className="gap-1.5">
+            <Package className="h-4 w-4" />
+            패키지 관리
           </TabsTrigger>
           <TabsTrigger value="center" className="gap-1.5">
             <Building2 className="h-4 w-4" />
@@ -345,6 +359,179 @@ export default function SettingsPage() {
               </Card>
             )
           })}
+        </TabsContent>
+
+        {/* ────── 패키지 관리 탭 ────── */}
+        <TabsContent value="packages" className="mt-4 space-y-4">
+          <Card>
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Package className="h-5 w-5" />
+                  <CardTitle className="text-base">패키지 / 주력 판매상품</CardTitle>
+                  <Badge variant="outline" className="ml-1">
+                    {packages.filter((p) => p.is_active).length}개 활성
+                  </Badge>
+                </div>
+                <Button
+                  size="sm"
+                  className="gap-1.5 bg-emerald-600 hover:bg-emerald-700"
+                  onClick={() => { setShowAddPkg(true); setNewPkgName(""); setNewPkgPrice("") }}
+                >
+                  <Plus className="h-3.5 w-3.5" /> 패키지 추가
+                </Button>
+              </div>
+              <CardDescription>
+                상담 시 안내하는 패키지 및 주력 판매상품을 관리합니다.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="p-0">
+              {showAddPkg && (
+                <div className="border-b bg-emerald-50/50 px-4 py-3">
+                  <div className="flex items-end gap-3">
+                    <div className="flex-1 space-y-1">
+                      <Label className="text-xs">패키지명</Label>
+                      <Input
+                        placeholder="패키지명 입력"
+                        className="h-8 text-sm"
+                        value={newPkgName}
+                        onChange={(e) => setNewPkgName(e.target.value)}
+                      />
+                    </div>
+                    <div className="w-[140px] space-y-1">
+                      <Label className="text-xs">가격 (원)</Label>
+                      <Input
+                        type="number"
+                        placeholder="0"
+                        className="h-8 text-sm"
+                        min={0}
+                        step={10000}
+                        value={newPkgPrice}
+                        onChange={(e) => setNewPkgPrice(e.target.value)}
+                      />
+                    </div>
+                    <Button
+                      size="sm"
+                      className="h-8 bg-emerald-600 hover:bg-emerald-700"
+                      disabled={!newPkgName.trim() || !newPkgPrice}
+                      onClick={() => {
+                        setPackages((prev) => [...prev, {
+                          id: `pkg-new-${Date.now()}`,
+                          center_id: "center-1",
+                          name: newPkgName.trim(),
+                          price: Number(newPkgPrice),
+                          is_active: true,
+                        }])
+                        setShowAddPkg(false)
+                        setNewPkgName("")
+                        setNewPkgPrice("")
+                      }}
+                    >
+                      등록
+                    </Button>
+                    <Button size="sm" variant="outline" className="h-8" onClick={() => setShowAddPkg(false)}>
+                      취소
+                    </Button>
+                  </div>
+                </div>
+              )}
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>패키지명</TableHead>
+                    <TableHead className="text-right">가격</TableHead>
+                    <TableHead className="text-center">상태</TableHead>
+                    <TableHead className="text-right w-[100px]">관리</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {packages.map((pkg) => (
+                    <TableRow key={pkg.id} className={!pkg.is_active ? "opacity-50" : ""}>
+                      <TableCell>
+                        {editingPkgId === pkg.id ? (
+                          <Input
+                            className="h-7 text-sm w-[200px]"
+                            value={editPkgName}
+                            onChange={(e) => setEditPkgName(e.target.value)}
+                          />
+                        ) : (
+                          <span className="font-medium">{pkg.name}</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {editingPkgId === pkg.id ? (
+                          <Input
+                            type="number"
+                            className="h-7 text-sm w-[120px] ml-auto"
+                            value={editPkgPrice}
+                            onChange={(e) => setEditPkgPrice(e.target.value)}
+                          />
+                        ) : (
+                          <span className="text-sm">{(pkg.price / 10000).toFixed(0)}만원</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 text-xs"
+                          onClick={() => {
+                            setPackages((prev) =>
+                              prev.map((p) => p.id === pkg.id ? { ...p, is_active: !p.is_active } : p)
+                            )
+                          }}
+                        >
+                          {pkg.is_active ? (
+                            <Badge variant="outline" className="text-emerald-700 border-emerald-300 cursor-pointer">활성</Badge>
+                          ) : (
+                            <Badge variant="outline" className="text-gray-500 cursor-pointer">비활성</Badge>
+                          )}
+                        </Button>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {editingPkgId === pkg.id ? (
+                          <div className="flex justify-end gap-1">
+                            <Button
+                              size="sm"
+                              className="h-7 text-xs bg-emerald-600 hover:bg-emerald-700"
+                              onClick={() => {
+                                setPackages((prev) =>
+                                  prev.map((p) => p.id === pkg.id ? {
+                                    ...p,
+                                    name: editPkgName.trim() || p.name,
+                                    price: Number(editPkgPrice) || p.price,
+                                  } : p)
+                                )
+                                setEditingPkgId(null)
+                              }}
+                            >
+                              저장
+                            </Button>
+                            <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => setEditingPkgId(null)}>
+                              취소
+                            </Button>
+                          </div>
+                        ) : (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 w-7 p-0"
+                            onClick={() => {
+                              setEditingPkgId(pkg.id)
+                              setEditPkgName(pkg.name)
+                              setEditPkgPrice(String(pkg.price))
+                            }}
+                          >
+                            <Pencil className="h-3.5 w-3.5" />
+                          </Button>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         {/* ────── 센터 설정 탭 ────── */}
