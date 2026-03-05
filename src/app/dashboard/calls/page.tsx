@@ -137,6 +137,7 @@ export default function CallsPage() {
       payment_amount: data.payment_amount || 0,
       drop_reason: data.drop_reason,
       is_confirmed: data.is_confirmed || false,
+      review_status: data.is_confirmed ? "reviewed" : "unreviewed",
       notes: data.notes,
       is_active: true,
       created_at: new Date().toISOString(),

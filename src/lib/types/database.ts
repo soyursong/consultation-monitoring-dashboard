@@ -2,6 +2,7 @@ export type PatientType = 'new' | 'returning'
 export type ReferralSource = 'ad' | 'organic'
 export type CallStatus = 'completed' | 'in_progress' | 'unconfirmed'
 export type PaymentStatus = 'paid' | 'unpaid' | 'partial'
+export type ReviewStatus = 'unreviewed' | 'reviewed' | 'needs_edit'
 
 // 역할: 마스터 > BO그룹 > 총괄실장 > 상담실장 > 코디
 export type UserRole = 'master' | 'bo' | 'head_manager' | 'counselor' | 'coordinator'
@@ -133,6 +134,7 @@ export interface Call {
   payment_amount: number
   drop_reason?: string | null
   is_confirmed: boolean
+  review_status: ReviewStatus
   confirmed_by?: string // 확정한 사용자 ID (코디)
   notes?: string
   is_active: boolean

@@ -9,10 +9,11 @@ import { Separator } from "@/components/ui/separator"
 import {
   demoSalesReps, statusLabels, statusColors,
   paymentStatusLabels, paymentStatusColors, patientTypeLabels, referralSourceLabels,
+  reviewStatusLabels, reviewStatusColors,
 } from "@/lib/demo-data"
 import { formatKRW } from "@/lib/format"
-import { Pencil, Power, PowerOff, CheckCircle, XCircle } from "lucide-react"
-import type { Call, CallStatus, PaymentStatus, PatientType, ReferralSource } from "@/lib/types/database"
+import { Pencil, Power, PowerOff, CheckCircle, XCircle, CircleDot } from "lucide-react"
+import type { Call, CallStatus, PaymentStatus, PatientType, ReferralSource, ReviewStatus } from "@/lib/types/database"
 
 interface CallDetailSheetProps {
   open: boolean
@@ -93,14 +94,13 @@ export function CallDetailSheet({ open, onOpenChange, call, onEdit, onToggleActi
 
         <div className="space-y-1">
           <h4 className="text-sm font-semibold text-muted-foreground mb-2">확인 상태</h4>
-          <DetailRow label="확인(컨펌)">
-            <div className="flex items-center gap-1">
-              {call.is_confirmed ? (
-                <><CheckCircle className="h-4 w-4 text-green-600" /><span className="text-green-700">확인 완료</span></>
-              ) : (
-                <><XCircle className="h-4 w-4 text-yellow-600" /><span className="text-yellow-700">미확인</span></>
-              )}
-            </div>
+          <DetailRow label="확인 상태">
+            <Badge variant="secondary" className={reviewStatusColors[call.review_status as ReviewStatus || "unreviewed"]}>
+              {call.review_status === "reviewed" && <CheckCircle className="h-3 w-3 mr-1" />}
+              {call.review_status === "needs_edit" && <CircleDot className="h-3 w-3 mr-1" />}
+              {(!call.review_status || call.review_status === "unreviewed") && <XCircle className="h-3 w-3 mr-1" />}
+              {reviewStatusLabels[call.review_status as ReviewStatus || "unreviewed"]}
+            </Badge>
           </DetailRow>
           {call.notes && (
             <div className="pt-2">
