@@ -1,4 +1,4 @@
-import type { Call, SalesRep, Center, Package, Recording, PatientType, ReferralSource, CallStatus, PaymentStatus } from '@/lib/types/database'
+import type { Call, SalesRep, Center, Package, Recording, User, PlaudToken, PatientType, ReferralSource, CallStatus, PaymentStatus } from '@/lib/types/database'
 
 // 풋케어센터 센터 정보
 export const demoCenter: Center = {
@@ -15,6 +15,29 @@ export const demoSalesReps: SalesRep[] = [
   { id: 'rep-3', name: '박윤지', position: '상담실장', center_id: 'center-1', is_active: true },
   { id: 'rep-4', name: '신선아', position: '상담실장', center_id: 'center-1', is_active: true },
   { id: 'rep-5', name: '이서연', position: '상담실장', center_id: 'center-1', is_active: true },
+]
+
+// 데모 사용자 (역할별)
+export const demoUsers: User[] = [
+  { id: 'user-1', name: '관리자', email: 'admin@footcare.com', role: 'master', center_id: 'center-1', is_active: true, created_at: '2025-01-01' },
+  { id: 'user-2', name: '김본부', email: 'bo@footcare.com', role: 'bo', center_id: 'center-1', is_active: true, created_at: '2025-01-01' },
+  { id: 'user-3', name: '이아인', email: 'ain@footcare.com', role: 'head_manager', center_id: 'center-1', sales_rep_id: 'rep-1', is_active: true, created_at: '2025-01-15' },
+  { id: 'user-4', name: '김정혜', email: 'jh@footcare.com', role: 'counselor', center_id: 'center-1', sales_rep_id: 'rep-2', is_active: true, created_at: '2025-02-01' },
+  { id: 'user-5', name: '박윤지', email: 'yj@footcare.com', role: 'counselor', center_id: 'center-1', sales_rep_id: 'rep-3', is_active: true, created_at: '2025-02-01' },
+  { id: 'user-6', name: '신선아', email: 'sa@footcare.com', role: 'counselor', center_id: 'center-1', sales_rep_id: 'rep-4', is_active: true, created_at: '2025-03-01' },
+  { id: 'user-7', name: '이서연', email: 'sy@footcare.com', role: 'counselor', center_id: 'center-1', sales_rep_id: 'rep-5', is_active: true, created_at: '2025-03-01' },
+  { id: 'user-8', name: '최코디', email: 'coord@footcare.com', role: 'coordinator', center_id: 'center-1', is_active: true, created_at: '2025-04-01' },
+]
+
+// 상담실장별 플라우드 토큰
+export const demoPlaudTokens: PlaudToken[] = [
+  { id: 'pt-1', sales_rep_id: 'rep-1', token: 'plaud_tk_***ain1', label: '이아인 플라우드 1', is_active: true, last_synced: '2026-03-05T10:30:00', created_at: '2025-06-01' },
+  { id: 'pt-2', sales_rep_id: 'rep-2', token: 'plaud_tk_***jh1', label: '김정혜 플라우드', is_active: true, last_synced: '2026-03-05T09:15:00', created_at: '2025-06-01' },
+  { id: 'pt-3', sales_rep_id: 'rep-2', token: 'plaud_tk_***jh2', label: '김정혜 플라우드 2', is_active: true, last_synced: '2026-03-04T17:00:00', created_at: '2025-09-15' },
+  { id: 'pt-4', sales_rep_id: 'rep-3', token: 'plaud_tk_***yj1', label: '박윤지 플라우드', is_active: true, last_synced: '2026-03-05T11:00:00', created_at: '2025-06-01' },
+  { id: 'pt-5', sales_rep_id: 'rep-4', token: 'plaud_tk_***sa1', label: '신선아 플라우드', is_active: true, last_synced: '2026-03-04T16:45:00', created_at: '2025-07-01' },
+  { id: 'pt-6', sales_rep_id: 'rep-5', token: 'plaud_tk_***sy1', label: '이서연 플라우드', is_active: true, last_synced: '2026-03-05T08:30:00', created_at: '2025-07-01' },
+  { id: 'pt-7', sales_rep_id: 'rep-5', token: 'plaud_tk_***sy2', label: '이서연 보조 기기', is_active: false, created_at: '2025-10-01' },
 ]
 
 // 풋케어 패키지
