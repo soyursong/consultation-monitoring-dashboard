@@ -6,10 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
   generateDemoCalls, demoSalesReps,
-  statusLabels, statusColors,
-  paymentStatusLabels, paymentStatusColors,
   patientTypeLabels, referralSourceLabels,
-  reviewStatusLabels, reviewStatusColors,
   dropReasons,
 } from "@/lib/demo-data"
 import { CallFormDialog } from "@/components/dashboard/call-form-dialog"
@@ -19,8 +16,9 @@ import {
   Phone, CreditCard, Banknote,
   Search, X, ChevronDown,
   Clock, FileText, ArrowRight, CheckCircle2,
+  Check, AlertCircle,
 } from "lucide-react"
-import type { Call, CallStatus, PaymentStatus, PatientType, ReferralSource, ReviewStatus } from "@/lib/types/database"
+import type { Call, PatientType, ReferralSource, ReviewStatus } from "@/lib/types/database"
 
 function formatDate(date: Date) {
   return date.toISOString().split("T")[0]
@@ -32,7 +30,29 @@ function formatDateDisplay(dateStr: string) {
   return `${d.getFullYear()}년 ${d.getMonth() + 1}월 ${d.getDate()}일 (${days[d.getDay()]})`
 }
 
-// ─── Inline Dropdown Badge ─────────────────────────────────────
+// ─── Toggle Switch ──────────────────────────────────────────────
+function ToggleSwitch({ checked, onChange, label, colorOn = "bg-emerald-500", colorOff = "bg-gray-300" }: {
+  checked: boolean; onChange: (v: boolean) => void; label?: string; colorOn?: string; colorOff?: string
+}) {
+  return (
+    <button
+      onClick={(e) => { e.stopPropagation(); onChange(!checked) }}
+      className="flex items-center gap-2 group"
+    >
+      <div className={`relative w-10 h-5.5 rounded-full transition-colors duration-200 ${checked ? colorOn : colorOff}`}
+        style={{ width: 40, height: 22 }}
+      >
+        <div
+          className="absolute top-0.5 w-[18px] h-[18px] rounded-full bg-white shadow-sm transition-transform duration-200"
+          style={{ left: checked ? 19 : 3 }}
+        />
+      </div>
+      {label && <span className={`text-xs font-medium transition-colors ${checked ? "text-gray-700" : "text-gray-400"}`}>{label}</span>}
+    </button>
+  )
+}
+
+// ─── Inline Dropdown Badge (클릭하면 바로 드롭다운 열림) ───────
 function DropdownBadge<T extends string>({
   value, options, colorMap, onChange,
 }: {
@@ -78,7 +98,7 @@ function DropdownBadge<T extends string>({
   )
 }
 
-// ─── Inline Amount Editor ──────────────────────────────────────
+// ─── Inline Amount Editor (클릭하면 바로 숫자 입력) ─────────────
 function InlineAmount({ value, onChange }: { value: number; onChange: (v: number) => void }) {
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState("")
@@ -91,91 +111,46 @@ function InlineAmount({ value, onChange }: { value: number; onChange: (v: number
   }
 
   useEffect(() => {
-    if (editing && inputRef.current) inputRef.current.focus()
+    if (editing && inputRef.current) {
+      inputRef.current.focus()
+      inputRef.current.select()
+    }
   }, [editing])
 
   const commit = () => { onChange(Number(draft) || 0); setEditing(false) }
 
   if (editing) {
     return (
-      <input
-        ref={inputRef}
-        type="number"
-        min={0}
-        step={10000}
-        value={draft}
-        onChange={(e) => setDraft(e.target.value)}
-        onBlur={commit}
-        onKeyDown={(e) => { if (e.key === "Enter") commit(); if (e.key === "Escape") setEditing(false) }}
-        onClick={(e) => e.stopPropagation()}
-        className="w-28 h-7 text-sm text-right border rounded-lg px-2 outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500"
-        placeholder="금액 입력"
-      />
-    )
-  }
-
-  return (
-    <span
-      className="text-sm font-semibold cursor-pointer hover:bg-gray-100 rounded-md px-1.5 py-0.5 transition-colors tabular-nums"
-      onClick={startEdit}
-      title="클릭하여 금액 수정"
-    >
-      {value > 0 ? `${value.toLocaleString()}원` : <span className="text-gray-400 font-normal">0원</span>}
-    </span>
-  )
-}
-
-// ─── Inline Score Editor ───────────────────────────────────────
-function InlineScore({ value, onChange }: { value: number; onChange: (v: number) => void }) {
-  const [editing, setEditing] = useState(false)
-  const [draft, setDraft] = useState("")
-  const inputRef = useRef<HTMLInputElement>(null)
-
-  const startEdit = (e: React.MouseEvent) => {
-    e.stopPropagation()
-    setDraft(String(value))
-    setEditing(true)
-  }
-
-  useEffect(() => {
-    if (editing && inputRef.current) { inputRef.current.focus(); inputRef.current.select() }
-  }, [editing])
-
-  const commit = () => {
-    const n = Math.min(100, Math.max(0, Number(draft) || 0))
-    onChange(n)
-    setEditing(false)
-  }
-
-  const scoreColor = value >= 90 ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-    : value >= 80 ? "bg-blue-50 text-blue-700 border-blue-200"
-    : value >= 70 ? "bg-yellow-50 text-yellow-700 border-yellow-200"
-    : "bg-red-50 text-red-700 border-red-200"
-
-  if (editing) {
-    return (
-      <input
-        ref={inputRef}
-        type="number"
-        min={0}
-        max={100}
-        value={draft}
-        onChange={(e) => setDraft(e.target.value)}
-        onBlur={commit}
-        onKeyDown={(e) => { if (e.key === "Enter") commit(); if (e.key === "Escape") setEditing(false) }}
-        onClick={(e) => e.stopPropagation()}
-        className="w-14 h-9 text-center text-lg font-bold border-2 rounded-xl outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500"
-      />
+      <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+        <input
+          ref={inputRef}
+          type="number"
+          min={0}
+          step={10000}
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onBlur={commit}
+          onKeyDown={(e) => { if (e.key === "Enter") commit(); if (e.key === "Escape") setEditing(false) }}
+          className="w-28 h-8 text-sm text-right border-2 border-emerald-400 rounded-lg px-2 outline-none focus:ring-2 focus:ring-emerald-500/30 bg-emerald-50/50"
+          placeholder="금액 입력"
+        />
+        <span className="text-xs text-gray-400">원</span>
+      </div>
     )
   }
 
   return (
     <button
+      className="flex items-center gap-1 text-sm font-semibold cursor-pointer hover:bg-emerald-50 rounded-lg px-2 py-1 transition-colors tabular-nums group border border-transparent hover:border-emerald-200"
       onClick={startEdit}
-      className={`w-12 h-9 flex items-center justify-center rounded-xl border text-lg font-bold cursor-pointer hover:shadow-md transition-all ${scoreColor}`}
-      title="클릭하여 점수 수정"
+      title="클릭하여 금액 수정"
     >
-      {value}
+      <Banknote className="h-3.5 w-3.5 text-gray-300 group-hover:text-emerald-500 transition-colors" />
+      {value > 0 ? (
+        <span className="text-emerald-700">{value.toLocaleString()}원</span>
+      ) : (
+        <span className="text-gray-400 font-normal">금액 입력</span>
+      )}
     </button>
   )
 }
@@ -203,7 +178,7 @@ function FilterChip({ label, active, onClick, count }: {
   )
 }
 
-// ─── Call Card Row ─────────────────────────────────────────────
+// ─── Call Card Row (토글 기반 인라인 편집) ────────────────────────
 function CallCardRow({
   call,
   onFieldChange,
@@ -215,164 +190,156 @@ function CallCardRow({
   onReviewToggle: (id: string) => void
   onOpenDetail: (call: Call) => void
 }) {
-  const [expanded, setExpanded] = useState(false)
   const rep = demoSalesReps.find((r) => r.id === call.sales_rep_id)
   const reviewStatus = call.review_status || "unreviewed"
   const durationMin = Math.floor(call.duration_seconds / 60)
   const durationSec = call.duration_seconds % 60
-
-  // Score
-  const score = useMemo(() => {
-    let s = 70
-    if (call.payment_status === "paid") s += 15
-    else if (call.payment_status === "partial") s += 10
-    if (call.status === "completed") s += 5
-    if (call.payment_amount >= 300000) s += 5
-    if (call.duration_seconds > 600) s += 5
-    return Math.min(100, s)
-  }, [call.payment_status, call.status, call.payment_amount, call.duration_seconds])
+  const isCompleted = call.status === "completed"
+  const isPaid = call.payment_status === "paid"
+  const isPartial = call.payment_status === "partial"
+  const isReviewed = reviewStatus === "reviewed"
 
   return (
-    <div className="border rounded-xl bg-white transition-all hover:shadow-sm">
-      <div className="flex items-center gap-3 px-4 py-3.5">
-        {/* Expand */}
-        <button
-          onClick={() => setExpanded(!expanded)}
-          className="text-gray-400 hover:text-gray-600 transition-colors flex-shrink-0"
-        >
-          <ChevronDown className={`h-4 w-4 transition-transform ${expanded ? "rotate-0" : "-rotate-90"}`} />
-        </button>
-
-        {/* Avatar */}
-        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gray-100 text-sm font-medium text-gray-600 flex-shrink-0">
-          {(call.customer_name || "?")[0]}
-        </div>
-
-        {/* Customer info */}
-        <div className="min-w-0 flex-shrink-0" style={{ width: "170px" }}>
-          <div className="flex items-center gap-1.5">
-            <span className="font-semibold text-sm truncate">{call.customer_name}</span>
-          </div>
-          <div className="flex items-center gap-1.5 text-xs text-gray-400 mt-0.5">
-            <span>{rep?.name}</span>
-            {call.call_time && <span>{call.call_time}</span>}
-          </div>
-        </div>
-
-        {/* Badges */}
-        <div className="flex items-center gap-1.5 flex-shrink-0">
-          <DropdownBadge
-            value={call.patient_type as PatientType}
-            options={patientTypeLabels}
-            colorMap={{ new: "bg-sky-100 text-sky-700", returning: "bg-emerald-100 text-emerald-700" }}
-            onChange={(v) => onFieldChange(call.id, "patient_type", v)}
-          />
-          <DropdownBadge
-            value={call.referral_source as ReferralSource || "organic"}
-            options={{ ...referralSourceLabels, none: "미정" }}
-            colorMap={{ ad: "bg-gray-200 text-gray-700", organic: "bg-gray-200 text-gray-700", none: "bg-gray-100 text-gray-500" }}
-            onChange={(v: string) => onFieldChange(call.id, "referral_source", v === "none" ? undefined : v)}
-          />
-        </div>
-
-        {/* Package & Duration */}
-        <div className="flex items-center gap-3 text-sm text-gray-600 flex-1 min-w-0 ml-2">
-          {call.package_name && (
-            <span className="truncate max-w-[180px] font-medium">{call.package_name}</span>
-          )}
-          <span className="flex items-center gap-1 text-xs text-gray-400 flex-shrink-0">
-            <Clock className="h-3 w-3" />
-            {durationMin}분 {durationSec > 0 ? `${String(durationSec).padStart(2, "0")}초` : "00초"}
-          </span>
-          {call.notes && <FileText className="h-3.5 w-3.5 text-gray-300 flex-shrink-0" />}
-        </div>
-
-        {/* Right side */}
-        <div className="flex items-center gap-3 flex-shrink-0 ml-auto">
-          {call.drop_reason && (
-            <span className="text-xs text-red-500 bg-red-50 px-2 py-0.5 rounded-full">{call.drop_reason}</span>
-          )}
-
-          <DropdownBadge
-            value={reviewStatus}
-            options={reviewStatusLabels}
-            colorMap={reviewStatusColors}
-            onChange={(v) => onFieldChange(call.id, "review_status", v)}
-          />
-
-          <InlineScore value={score} onChange={() => {}} />
-
-          <div className="flex items-center gap-2 min-w-[140px] justify-end">
-            <DropdownBadge
-              value={call.payment_status as PaymentStatus}
-              options={paymentStatusLabels}
-              colorMap={paymentStatusColors}
-              onChange={(v) => onFieldChange(call.id, "payment_status", v)}
-            />
-            <InlineAmount
-              value={call.payment_amount}
-              onChange={(v) => onFieldChange(call.id, "payment_amount", v)}
-            />
+    <div className={`border rounded-xl bg-white transition-all hover:shadow-md ${
+      isReviewed ? "border-emerald-200 bg-emerald-50/30" :
+      reviewStatus === "needs_edit" ? "border-amber-200 bg-amber-50/20" : ""
+    }`}>
+      {/* Main Row */}
+      <div className="px-5 py-4">
+        {/* Top: Customer info + Badges */}
+        <div className="flex items-center gap-3 mb-3">
+          {/* Avatar */}
+          <div className={`flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold flex-shrink-0 ${
+            isReviewed ? "bg-emerald-100 text-emerald-700" : "bg-gray-100 text-gray-600"
+          }`}>
+            {(call.customer_name || "?")[0]}
           </div>
 
-          {/* Review circle toggle */}
-          <button
-            onClick={(e) => { e.stopPropagation(); onReviewToggle(call.id) }}
-            className={`w-6 h-6 rounded-full border-2 flex-shrink-0 transition-colors ${
-              reviewStatus === "reviewed" ? "bg-emerald-500 border-emerald-500" :
-              reviewStatus === "needs_edit" ? "bg-red-400 border-red-400" :
-              "border-gray-300 hover:border-gray-400"
-            }`}
-            title="확인 상태 토글"
-          />
+          {/* Customer info */}
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2">
+              <span className="font-bold text-[15px]">{call.customer_name}</span>
+              <DropdownBadge
+                value={call.patient_type as PatientType}
+                options={patientTypeLabels}
+                colorMap={{ new: "bg-sky-100 text-sky-700", returning: "bg-emerald-100 text-emerald-700" }}
+                onChange={(v) => onFieldChange(call.id, "patient_type", v)}
+              />
+              <DropdownBadge
+                value={call.referral_source as ReferralSource || "organic"}
+                options={{ ...referralSourceLabels, none: "미정" }}
+                colorMap={{ ad: "bg-gray-200 text-gray-700", organic: "bg-gray-200 text-gray-700", none: "bg-gray-100 text-gray-500" }}
+                onChange={(v: string) => onFieldChange(call.id, "referral_source", v === "none" ? undefined : v)}
+              />
+            </div>
+            <div className="flex items-center gap-2 text-xs text-gray-400 mt-0.5">
+              <span className="font-medium text-gray-500">{rep?.name}</span>
+              {call.call_time && (
+                <span className="flex items-center gap-0.5">
+                  <Clock className="h-3 w-3" />
+                  {call.call_time}
+                </span>
+              )}
+              <span>{durationMin}분 {durationSec > 0 ? `${durationSec}초` : ""}</span>
+              {call.package_name && (
+                <>
+                  <span className="text-gray-300">|</span>
+                  <span className="text-gray-500 font-medium">{call.package_name}</span>
+                </>
+              )}
+            </div>
+          </div>
 
+          {/* Detail button */}
           <button
             onClick={(e) => { e.stopPropagation(); onOpenDetail(call) }}
-            className="text-gray-300 hover:text-gray-500 transition-colors"
+            className="text-gray-300 hover:text-gray-500 transition-colors p-1"
           >
             <ArrowRight className="h-4 w-4" />
           </button>
         </div>
-      </div>
 
-      {/* Expanded detail */}
-      {expanded && (
-        <div className="border-t px-4 py-3 bg-gray-50/50 rounded-b-xl">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-            <div>
-              <span className="text-xs text-gray-400 block mb-1">상담 상태</span>
-              <DropdownBadge
-                value={call.status as CallStatus}
-                options={statusLabels}
-                colorMap={statusColors}
-                onChange={(v) => onFieldChange(call.id, "status", v)}
-              />
-            </div>
-            <div>
-              <span className="text-xs text-gray-400 block mb-1">담당자</span>
-              <span className="font-medium">{rep?.name} <span className="text-gray-400 text-xs">{rep?.position}</span></span>
-            </div>
-            <div>
-              <span className="text-xs text-gray-400 block mb-1">통화 시간</span>
-              <span>{durationMin}분 {durationSec > 0 ? `${durationSec}초` : ""}</span>
-            </div>
-            <div>
-              <span className="text-xs text-gray-400 block mb-1">이탈 사유</span>
-              <DropdownBadge
-                value={call.drop_reason || "none"}
-                options={{ none: "없음", ...Object.fromEntries(dropReasons.map(r => [r, r])) }}
-                colorMap={{ none: "bg-gray-100 text-gray-500", ...Object.fromEntries(dropReasons.map(r => [r, "bg-red-50 text-red-700"])) }}
-                onChange={(v: string) => onFieldChange(call.id, "drop_reason", v === "none" ? null : v)}
-              />
-            </div>
+        {/* Toggle Controls Row */}
+        <div className="flex items-center gap-6 bg-gray-50/80 rounded-lg px-4 py-2.5 border border-gray-100">
+          {/* 상담 상태 토글 */}
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-gray-400 min-w-[44px]">상담</span>
+            <ToggleSwitch
+              checked={isCompleted}
+              onChange={(v) => onFieldChange(call.id, "status", v ? "completed" : "unconfirmed")}
+              label={isCompleted ? "완료" : "미완료"}
+              colorOn="bg-emerald-500"
+            />
           </div>
-          {call.notes && (
-            <div className="mt-3 text-sm text-gray-500 bg-white rounded-lg p-2.5 border">
-              {call.notes}
-            </div>
-          )}
+
+          <div className="w-px h-6 bg-gray-200" />
+
+          {/* 결제 상태 토글 */}
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-gray-400 min-w-[44px]">결제</span>
+            <ToggleSwitch
+              checked={isPaid || isPartial}
+              onChange={(v) => onFieldChange(call.id, "payment_status", v ? "paid" : "unpaid")}
+              label={isPaid ? "결제완료" : isPartial ? "부분결제" : "미결제"}
+              colorOn="bg-blue-500"
+            />
+          </div>
+
+          <div className="w-px h-6 bg-gray-200" />
+
+          {/* 결제 금액 (클릭하여 바로 수정) */}
+          <InlineAmount
+            value={call.payment_amount}
+            onChange={(v) => onFieldChange(call.id, "payment_amount", v)}
+          />
+
+          <div className="w-px h-6 bg-gray-200" />
+
+          {/* 이탈 사유 */}
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-gray-400 min-w-[44px]">이탈</span>
+            <DropdownBadge
+              value={call.drop_reason || "none"}
+              options={{ none: "없음", ...Object.fromEntries(dropReasons.map(r => [r, r])) }}
+              colorMap={{ none: "bg-gray-100 text-gray-500", ...Object.fromEntries(dropReasons.map(r => [r, "bg-red-50 text-red-700"])) }}
+              onChange={(v: string) => onFieldChange(call.id, "drop_reason", v === "none" ? null : v)}
+            />
+          </div>
+
+          {/* Spacer */}
+          <div className="flex-1" />
+
+          {/* 확인 완료 토글 (가장 오른쪽, 크게) */}
+          <div className="flex items-center gap-2 pl-3 border-l border-gray-200">
+            <button
+              onClick={(e) => { e.stopPropagation(); onReviewToggle(call.id) }}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                isReviewed
+                  ? "bg-emerald-500 text-white shadow-sm hover:bg-emerald-600"
+                  : reviewStatus === "needs_edit"
+                  ? "bg-amber-100 text-amber-700 border border-amber-300 hover:bg-amber-200"
+                  : "bg-white text-gray-500 border border-gray-300 hover:bg-gray-100 hover:text-gray-700"
+              }`}
+            >
+              {isReviewed ? (
+                <><Check className="h-3.5 w-3.5" /> 확인완료</>
+              ) : reviewStatus === "needs_edit" ? (
+                <><AlertCircle className="h-3.5 w-3.5" /> 수정필요</>
+              ) : (
+                <>미확인</>
+              )}
+            </button>
+          </div>
         </div>
-      )}
+
+        {/* Notes */}
+        {call.notes && (
+          <div className="mt-2.5 flex items-start gap-2 text-xs text-gray-500 bg-white rounded-lg p-2.5 border border-gray-100">
+            <FileText className="h-3.5 w-3.5 text-gray-300 mt-0.5 flex-shrink-0" />
+            <span>{call.notes}</span>
+          </div>
+        )}
+      </div>
     </div>
   )
 }
@@ -496,7 +463,6 @@ export default function DailyReviewPage() {
   const openEdit = (call: Call) => { setFormMode("edit"); setEditingCall(call); setFormOpen(true); setDetailOpen(false) }
   const openDetail = (call: Call) => { setDetailCall(call); setDetailOpen(true) }
 
-  // Progress bar
   const reviewProgress = stats.total > 0 ? Math.round((stats.reviewed / stats.total) * 100) : 0
 
   return (
@@ -505,14 +471,14 @@ export default function DailyReviewPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">일일 상담 확인</h1>
-          <p className="text-sm text-gray-500 mt-0.5">코디 데일리 워크스페이스</p>
+          <p className="text-sm text-gray-500 mt-0.5">코디 데일리 워크스페이스 — 리스트에서 바로 수정 가능</p>
         </div>
         <Button onClick={openCreate} className="bg-emerald-600 hover:bg-emerald-700 rounded-lg h-9 px-4 text-sm">
           <Plus className="h-4 w-4 mr-1.5" /> 신규 상담 입력
         </Button>
       </div>
 
-      {/* Date Navigation + Progress */}
+      {/* Date Navigation */}
       <div className="flex items-center gap-4 bg-white rounded-xl border p-4">
         <Button variant="outline" size="sm" onClick={() => navigateDate(-1)} className="rounded-lg h-8">
           <ChevronLeft className="h-4 w-4" />
@@ -576,7 +542,6 @@ export default function DailyReviewPage() {
 
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-4">
-        {/* Review status filter */}
         <div className="flex gap-1.5">
           {[
             { value: "all", label: "전체", count: stats.total },
@@ -594,7 +559,6 @@ export default function DailyReviewPage() {
           ))}
         </div>
 
-        {/* Rep filter */}
         <div className="flex items-center gap-2">
           <span className="text-sm text-gray-400">담당자:</span>
           <div className="relative inline-block">
@@ -612,7 +576,6 @@ export default function DailyReviewPage() {
           </div>
         </div>
 
-        {/* Search */}
         <div className="relative ml-auto">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
           <Input
@@ -629,8 +592,20 @@ export default function DailyReviewPage() {
         </div>
       </div>
 
+      {/* Inline editing guide */}
+      <div className="flex items-center gap-3 text-xs text-gray-400 bg-gray-50 rounded-lg px-4 py-2 border border-gray-100">
+        <span className="font-medium text-gray-500">사용법:</span>
+        <span>토글로 상담/결제 상태 변경</span>
+        <span className="text-gray-300">|</span>
+        <span>금액 클릭하여 직접 입력</span>
+        <span className="text-gray-300">|</span>
+        <span>뱃지 클릭하여 유형 변경</span>
+        <span className="text-gray-300">|</span>
+        <span>확인 버튼으로 리뷰 상태 토글</span>
+      </div>
+
       {/* Card List */}
-      <div className="space-y-2">
+      <div className="space-y-3">
         {dayCalls.length === 0 ? (
           <div className="text-center py-12 text-gray-400 border rounded-xl bg-white">
             {searchQuery
