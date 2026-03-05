@@ -1,34 +1,63 @@
-import type { Counselor, Consultation, Recording, Channel, Outcome } from '@/lib/types/database'
+import type { Call, SalesRep, Center, Package, Recording, PatientType, ReferralSource, CallStatus, PaymentStatus } from '@/lib/types/database'
 
-// 데모용 상담사 데이터
-export const demoCounselors: Counselor[] = [
-  { id: 'c1', name: '김서연', email: 'kim@clinic.com', branch: '강남점', position: '실장', role: 'manager', is_active: true, created_at: '2024-01-01' },
-  { id: 'c2', name: '이지원', email: 'lee@clinic.com', branch: '강남점', position: '상담사', role: 'counselor', is_active: true, created_at: '2024-02-01' },
-  { id: 'c3', name: '박민지', email: 'park@clinic.com', branch: '강남점', position: '상담사', role: 'counselor', is_active: true, created_at: '2024-03-01' },
-  { id: 'c4', name: '정하늘', email: 'jung@clinic.com', branch: '서초점', position: '실장', role: 'manager', is_active: true, created_at: '2024-01-15' },
-  { id: 'c5', name: '최은서', email: 'choi@clinic.com', branch: '서초점', position: '상담사', role: 'counselor', is_active: true, created_at: '2024-04-01' },
+// 풋케어센터 센터 정보
+export const demoCenter: Center = {
+  id: 'center-1',
+  name: '풋케어센터 강남점',
+  industry: '풋케어',
+  is_active: true,
+}
+
+// 세일즈 담당자 (Lovable 앱 기준)
+export const demoSalesReps: SalesRep[] = [
+  { id: 'rep-1', name: '이아인', position: '총괄실장', center_id: 'center-1', is_active: true },
+  { id: 'rep-2', name: '김정혜', position: '상담실장', center_id: 'center-1', is_active: true },
+  { id: 'rep-3', name: '박윤지', position: '상담실장', center_id: 'center-1', is_active: true },
+  { id: 'rep-4', name: '신선아', position: '상담실장', center_id: 'center-1', is_active: true },
+  { id: 'rep-5', name: '이서연', position: '상담실장', center_id: 'center-1', is_active: true },
 ]
 
-const channels: Channel[] = ['TM_OUTBOUND', 'TM_INBOUND', 'WALK_IN', 'ONLINE', 'KAKAO', 'REFERRAL', 'SNS', 'AD']
-const treatmentCategories = ['피부', '체형', '안면윤곽', '눈', '코', '리프팅', '보톡스/필러']
-const treatmentNames: Record<string, string[]> = {
-  '피부': ['레이저토닝', '피코토닝', 'IPL', '스킨보톡스'],
-  '체형': ['지방흡입', '지방분해주사', '체형교정'],
-  '안면윤곽': ['사각턱', '광대축소', 'V라인'],
-  '눈': ['쌍꺼풀', '눈매교정', '하안검'],
-  '코': ['코끝성형', '콧대', '코재수술'],
-  '리프팅': ['실리프팅', '울쎄라', '써마지'],
-  '보톡스/필러': ['보톡스', '필러', '스킨보톡스'],
-}
+// 풋케어 패키지
+export const demoPackages: Package[] = [
+  { id: 'pkg-1', center_id: 'center-1', name: '내성발톱 교정', price: 150000, is_active: true },
+  { id: 'pkg-2', center_id: 'center-1', name: '발톱무좀 치료', price: 200000, is_active: true },
+  { id: 'pkg-3', center_id: 'center-1', name: '발각질 관리', price: 80000, is_active: true },
+  { id: 'pkg-4', center_id: 'center-1', name: '티눈/굳은살 제거', price: 100000, is_active: true },
+  { id: 'pkg-5', center_id: 'center-1', name: '풋케어 종합 패키지', price: 350000, is_active: true },
+  { id: 'pkg-6', center_id: 'center-1', name: '발톱 복원', price: 250000, is_active: true },
+  { id: 'pkg-7', center_id: 'center-1', name: '무좀 집중 케어', price: 300000, is_active: true },
+  { id: 'pkg-8', center_id: 'center-1', name: '발관리 정기권', price: 500000, is_active: true },
+]
+
+// 이탈 사유
+export const dropReasons = [
+  '가격 부담',
+  '타 업체 비교',
+  '시간 안맞음',
+  '효과 의심',
+  '단순 문의',
+  '연락 두절',
+  '치료 불필요 판단',
+  '재방문 예정',
+]
 
 function seededRandom(seed: number) {
   const x = Math.sin(seed) * 10000
   return x - Math.floor(x)
 }
 
+const customerFirstNames = ['김', '이', '박', '최', '정', '강', '조', '윤', '장', '임', '한', '오', '서', '신', '권', '황', '안', '송', '류', '홍']
+const customerLastNames = ['민수', '영희', '철수', '지은', '수진', '현우', '미나', '정호', '서연', '준혁', '하은', '도윤', '예진', '성민', '지현', '우진', '소율', '태현', '나은', '시우']
+
+function generateCustomerName(seed: number): string {
+  const first = customerFirstNames[Math.floor(seededRandom(seed) * customerFirstNames.length)]
+  const last = customerLastNames[Math.floor(seededRandom(seed + 100) * customerLastNames.length)]
+  return `${first}${last}`
+}
+
 // 최근 90일간의 데모 상담 데이터 생성
-export function generateDemoConsultations(): Consultation[] {
-  const consultations: Consultation[] = []
+export function generateDemoCalls(): Call[] {
+  const calls: Call[] = []
   const today = new Date()
 
   for (let dayOffset = 89; dayOffset >= 0; dayOffset--) {
@@ -37,119 +66,163 @@ export function generateDemoConsultations(): Consultation[] {
     const dateStr = date.toISOString().split('T')[0]
     const dayOfWeek = date.getDay()
 
-    // 주말은 상담 적음
-    const dailyCount = dayOfWeek === 0 ? 0 : dayOfWeek === 6 ? Math.floor(seededRandom(dayOffset * 7) * 5) + 2 : Math.floor(seededRandom(dayOffset * 3) * 12) + 5
+    // 일요일 휴무, 토요일 적음
+    const dailyCount = dayOfWeek === 0 ? 0 : dayOfWeek === 6 ? Math.floor(seededRandom(dayOffset * 7) * 4) + 1 : Math.floor(seededRandom(dayOffset * 3) * 10) + 4
 
     for (let i = 0; i < dailyCount; i++) {
       const seed = dayOffset * 100 + i
-      const counselor = demoCounselors[Math.floor(seededRandom(seed + 1) * demoCounselors.length)]
-      const channel = channels[Math.floor(seededRandom(seed + 2) * channels.length)]
-      const outcomeRand = seededRandom(seed + 3)
-      const outcome: Outcome = outcomeRand < 0.35 ? 'CONVERTED' : outcomeRand < 0.55 ? 'FOLLOW_UP' : outcomeRand < 0.7 ? 'PENDING' : outcomeRand < 0.8 ? 'CANCELLED' : outcomeRand < 0.9 ? 'REJECTED' : 'NO_SHOW'
+      const rep = demoSalesReps[Math.floor(seededRandom(seed + 1) * demoSalesReps.length)]
+      const pkg = demoPackages[Math.floor(seededRandom(seed + 2) * demoPackages.length)]
 
-      const category = treatmentCategories[Math.floor(seededRandom(seed + 4) * treatmentCategories.length)]
-      const names = treatmentNames[category]
-      const treatment = names[Math.floor(seededRandom(seed + 5) * names.length)]
+      // 신환/구환 (60% 신환, 40% 구환)
+      const patientType: PatientType = seededRandom(seed + 3) < 0.6 ? 'new' : 'returning'
 
-      const baseAmount = Math.floor(seededRandom(seed + 6) * 400 + 50) * 10000
-      const isConverted = outcome === 'CONVERTED'
+      // 유입 경로 (신환: 50% 광고, 50% 자연 / 구환: 20% 광고, 80% 자연)
+      const adProb = patientType === 'new' ? 0.5 : 0.2
+      const referralSource: ReferralSource = seededRandom(seed + 4) < adProb ? 'ad' : 'organic'
 
-      consultations.push({
-        id: `con-${dayOffset}-${i}`,
-        counselor_id: counselor.id,
-        patient_id: `pat-${seed}`,
-        consultation_date: dateStr,
-        duration_minutes: Math.floor(seededRandom(seed + 7) * 45) + 10,
-        channel,
-        outcome,
-        treatment_category: category,
-        treatment_name: treatment,
-        quoted_amount: baseAmount,
-        agreed_amount: isConverted ? Math.floor(baseAmount * (0.8 + seededRandom(seed + 8) * 0.2)) : 0,
-        paid_amount: isConverted ? Math.floor(baseAmount * (0.7 + seededRandom(seed + 9) * 0.25)) : 0,
-        consultation_notes: `${treatment} 상담 진행. ${isConverted ? '시술 예약 완료.' : outcome === 'FOLLOW_UP' ? '재상담 예정.' : ''}`,
-        branch: counselor.branch,
+      // 상담 결과 - 상담사별 차이
+      const repSkill = rep.id === 'rep-1' ? 0.55 : rep.id === 'rep-2' ? 0.45 : rep.id === 'rep-3' ? 0.40 : rep.id === 'rep-4' ? 0.35 : 0.38
+      const outcomeRand = seededRandom(seed + 5)
+      let status: CallStatus
+      let paymentStatus: PaymentStatus
+      let paymentAmount: number
+      let isConfirmed: boolean
+      let dropReason: string | null = null
+
+      if (outcomeRand < repSkill) {
+        status = 'completed'
+        paymentStatus = seededRandom(seed + 6) < 0.8 ? 'paid' : 'partial'
+        const discount = 0.8 + seededRandom(seed + 7) * 0.2
+        paymentAmount = Math.round(pkg.price * discount / 10000) * 10000
+        isConfirmed = true
+      } else if (outcomeRand < repSkill + 0.15) {
+        status = 'in_progress'
+        paymentStatus = 'unpaid'
+        paymentAmount = 0
+        isConfirmed = true
+      } else {
+        status = 'completed'
+        paymentStatus = 'unpaid'
+        paymentAmount = 0
+        isConfirmed = seededRandom(seed + 8) < 0.7
+        dropReason = dropReasons[Math.floor(seededRandom(seed + 9) * dropReasons.length)]
+      }
+
+      const consultationScore = status === 'completed' && paymentStatus !== 'unpaid'
+        ? Math.floor(seededRandom(seed + 10) * 3) + 7
+        : Math.floor(seededRandom(seed + 10) * 5) + 4
+
+      const durationMinutes = Math.floor(seededRandom(seed + 11) * 45) + 5
+      const durationSeconds = durationMinutes * 60
+
+      const hours = [9, 10, 11, 13, 14, 15, 16, 17]
+      const hour = hours[Math.floor(seededRandom(seed + 12) * hours.length)]
+      const minute = Math.floor(seededRandom(seed + 13) * 60)
+      const callTime = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`
+
+      calls.push({
+        id: `call-${dayOffset}-${i}`,
+        center_id: 'center-1',
+        sales_rep_id: rep.id,
+        customer_name: generateCustomerName(seed + 20),
+        patient_type: patientType,
+        referral_source: referralSource,
+        package_name: pkg.name,
+        call_date: dateStr,
+        call_time: callTime,
+        duration_seconds: durationSeconds,
+        consultation_score: consultationScore,
+        status,
+        payment_status: paymentStatus,
+        payment_amount: paymentAmount,
+        drop_reason: dropReason,
+        is_confirmed: isConfirmed,
+        notes: paymentAmount > 0
+          ? `${pkg.name} 상담 진행, 결제 완료`
+          : dropReason
+            ? `${pkg.name} 상담 - 이탈사유: ${dropReason}`
+            : `${pkg.name} 상담 진행 중`,
         created_at: dateStr,
-        counselor,
+        sales_rep: rep,
       })
     }
   }
 
-  return consultations
+  return calls
 }
 
+// 데모 녹취 데이터
 export const demoRecordings: Recording[] = [
   {
     id: 'r1',
-    consultation_id: 'con-1-0',
-    plaud_transcription_id: 'plaud-abc123',
-    transcript_text: '상담사: 안녕하세요, 어떤 시술에 관심이 있으신가요?\n고객: 네, 레이저토닝 시술에 대해 알고 싶어서요.\n상담사: 네, 레이저토닝은 피부 톤 개선과 잡티 제거에 효과적인 시술입니다...',
-    summary: '레이저토닝 시술 상담. 고객은 피부톤 개선에 관심. 3회 패키지 할인 안내 후 예약 진행.',
-    duration_seconds: 1200,
+    call_id: 'call-1-0',
+    plaud_id: 'plaud-abc123',
+    title: '내성발톱 교정 상담',
+    transcript: '상담사: 안녕하세요, 풋케어센터입니다.\n고객: 네, 내성발톱 교정 때문에 전화드렸어요.\n상담사: 네, 내성발톱은 저희가 특화된 분야이구요, 한번 내원하셔서 상태를 보고 치료 계획을 세워드립니다.',
+    summary: '내성발톱 교정 상담. 신규 고객. 엄지 발톱 양쪽 내성. 교정 패키지 안내 후 내원 예약 완료.',
+    duration_seconds: 720,
+    speakers: ['이아인', '고객'],
+    date: '2026-03-01',
     created_at: '2026-03-01',
   },
   {
     id: 'r2',
-    consultation_id: 'con-2-0',
-    plaud_transcription_id: 'plaud-def456',
-    transcript_text: '상담사: 안녕하세요, 보톡스 상담 예약하신 분이시죠?\n고객: 네 맞습니다. 이마 주름이 신경쓰여서요.\n상담사: 네, 이마 보톡스는 가장 많이 하시는 시술 중 하나예요...',
-    summary: '이마 보톡스 상담. 시술 경험 없는 신규 고객. 가격 비교 후 결정하겠다고 함.',
-    duration_seconds: 900,
+    call_id: 'call-2-0',
+    plaud_id: 'plaud-def456',
+    title: '발톱무좀 치료 상담',
+    transcript: '상담사: 안녕하세요, 풋케어센터입니다.\n고객: 발톱무좀이 좀 심한데 치료가 가능할까요?\n상담사: 물론이죠. 무좀 정도에 따라 치료 기간이 달라지지만 충분히 호전 가능합니다.',
+    summary: '발톱무좀 치료 문의. 3년 정도 된 무좀. 집중 케어 패키지 안내. 가격 비교 후 재연락 예정.',
+    duration_seconds: 540,
+    speakers: ['김정혜', '고객'],
+    date: '2026-03-02',
     created_at: '2026-03-02',
   },
   {
     id: 'r3',
-    consultation_id: 'con-3-0',
-    plaud_transcription_id: 'plaud-ghi789',
-    transcript_text: '상담사: 안녕하세요, 지방흡입 상담 문의주셨죠?\n고객: 네, 복부 지방흡입 비용이랑 과정이 궁금해서요.\n상담사: 복부 지방흡입은 보통 1-2시간 정도 소요되고요...',
-    summary: '복부 지방흡입 상담. 비용 및 회복기간 안내. 다음 주 원장님 상담 예약.',
-    duration_seconds: 1500,
+    call_id: 'call-3-0',
+    plaud_id: 'plaud-ghi789',
+    title: '종합 패키지 재상담',
+    transcript: '상담사: 안녕하세요, 지난번에 상담받으셨던 분이시죠?\n고객: 네 맞아요. 종합 패키지로 결정하려고요.\n상담사: 좋은 결정이세요! 종합 패키지는 발톱 교정과 각질 관리를 함께 받으실 수 있어요.',
+    summary: '종합 패키지 결정 상담. 구환 재방문. 풋케어 종합 패키지 35만원 결제 완료.',
+    duration_seconds: 480,
+    speakers: ['박윤지', '고객'],
+    date: '2026-03-03',
     created_at: '2026-03-03',
   },
 ]
 
-// 채널 한글 레이블
-export const channelLabels: Record<Channel, string> = {
-  TM_OUTBOUND: 'TM 아웃바운드',
-  TM_INBOUND: 'TM 인바운드',
-  WALK_IN: '내원',
-  ONLINE: '온라인',
-  KAKAO: '카카오톡',
-  REFERRAL: '소개',
-  SNS: 'SNS',
-  AD: '광고',
-  OTHER: '기타',
+// 상태 레이블
+export const statusLabels: Record<CallStatus, string> = {
+  completed: '완료',
+  in_progress: '진행중',
+  unconfirmed: '미확인',
 }
 
-// 결과 한글 레이블
-export const outcomeLabels: Record<Outcome, string> = {
-  PENDING: '대기',
-  CONVERTED: '전환',
-  FOLLOW_UP: '재상담',
-  CANCELLED: '취소',
-  NO_SHOW: '노쇼',
-  REJECTED: '보류',
+export const statusColors: Record<CallStatus, string> = {
+  completed: 'bg-green-100 text-green-800',
+  in_progress: 'bg-blue-100 text-blue-800',
+  unconfirmed: 'bg-yellow-100 text-yellow-800',
 }
 
-// 결과 색상
-export const outcomeColors: Record<Outcome, string> = {
-  PENDING: 'bg-yellow-100 text-yellow-800',
-  CONVERTED: 'bg-green-100 text-green-800',
-  FOLLOW_UP: 'bg-blue-100 text-blue-800',
-  CANCELLED: 'bg-gray-100 text-gray-800',
-  NO_SHOW: 'bg-red-100 text-red-800',
-  REJECTED: 'bg-orange-100 text-orange-800',
+export const paymentStatusLabels: Record<PaymentStatus, string> = {
+  paid: '결제완료',
+  unpaid: '미결제',
+  partial: '부분결제',
 }
 
-// 채널 색상 (차트용)
-export const channelColors: Record<string, string> = {
-  TM_OUTBOUND: '#3b82f6',
-  TM_INBOUND: '#60a5fa',
-  WALK_IN: '#10b981',
-  ONLINE: '#8b5cf6',
-  KAKAO: '#f59e0b',
-  REFERRAL: '#ec4899',
-  SNS: '#06b6d4',
-  AD: '#f97316',
-  OTHER: '#6b7280',
+export const paymentStatusColors: Record<PaymentStatus, string> = {
+  paid: 'bg-green-100 text-green-800',
+  unpaid: 'bg-red-100 text-red-800',
+  partial: 'bg-orange-100 text-orange-800',
+}
+
+export const patientTypeLabels: Record<PatientType, string> = {
+  new: '신환',
+  returning: '구환',
+}
+
+export const referralSourceLabels: Record<ReferralSource, string> = {
+  ad: '광고',
+  organic: '자연유입',
 }

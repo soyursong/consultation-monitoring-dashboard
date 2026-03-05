@@ -1,103 +1,76 @@
-export type Channel =
-  | 'TM_OUTBOUND'
-  | 'TM_INBOUND'
-  | 'WALK_IN'
-  | 'ONLINE'
-  | 'KAKAO'
-  | 'REFERRAL'
-  | 'SNS'
-  | 'AD'
-  | 'OTHER'
+export type PatientType = 'new' | 'returning'
+export type ReferralSource = 'ad' | 'organic'
+export type CallStatus = 'completed' | 'in_progress' | 'unconfirmed'
+export type PaymentStatus = 'paid' | 'unpaid' | 'partial'
+export type UserRole = 'master' | 'manager' | 'counselor'
 
-export type Outcome =
-  | 'PENDING'
-  | 'CONVERTED'
-  | 'FOLLOW_UP'
-  | 'CANCELLED'
-  | 'NO_SHOW'
-  | 'REJECTED'
-
-export type UserRole = 'admin' | 'manager' | 'counselor'
-
-export interface Counselor {
+export interface Center {
   id: string
   name: string
-  email: string
-  phone?: string
-  branch: string
-  position: string
-  role: UserRole
+  industry: string
   is_active: boolean
-  created_at: string
 }
 
-export interface Patient {
+export interface SalesRep {
   id: string
   name: string
-  phone?: string
-  gender?: 'M' | 'F'
-  is_new_patient: boolean
-  source_channel?: Channel
-  created_at: string
+  position: '총괄실장' | '상담실장'
+  center_id: string
+  is_active: boolean
 }
 
-export interface Consultation {
+export interface Package {
   id: string
-  counselor_id: string
-  patient_id?: string
-  consultation_date: string
-  duration_minutes?: number
-  channel: Channel
-  outcome: Outcome
-  treatment_category?: string
-  treatment_name?: string
-  quoted_amount: number
-  agreed_amount: number
-  paid_amount: number
-  consultation_notes?: string
-  recording_url?: string
-  branch: string
+  center_id: string
+  name: string
+  price: number
+  is_active: boolean
+}
+
+export interface Call {
+  id: string
+  center_id: string
+  sales_rep_id: string
+  customer_name: string
+  hospital_name?: string
+  patient_type: PatientType
+  referral_source?: ReferralSource
+  package_name?: string
+  call_date: string
+  call_time?: string
+  duration_seconds: number
+  consultation_score?: number
+  status: CallStatus
+  payment_status: PaymentStatus
+  payment_amount: number
+  drop_reason?: string | null
+  is_confirmed: boolean
+  notes?: string
   created_at: string
-  // joined
-  counselor?: Counselor
-  patient?: Patient
+  sales_rep?: SalesRep
 }
 
 export interface Recording {
   id: string
-  consultation_id?: string
-  plaud_transcription_id?: string
-  transcript_text?: string
+  call_id?: string
+  plaud_id?: string
+  title?: string
+  transcript?: string
   summary?: string
-  file_url?: string
   duration_seconds?: number
+  speakers?: string[]
+  date?: string
   created_at: string
 }
 
-// Supabase DB type (simplified for demo - Supabase 연결 시 supabase gen types로 대체)
 export interface Database {
   public: {
     Tables: {
-      counselors: {
-        Row: Counselor
-        Insert: Omit<Counselor, 'id' | 'created_at'>
-        Update: Partial<Omit<Counselor, 'id' | 'created_at'>>
-      }
-      patients: {
-        Row: Patient
-        Insert: Omit<Patient, 'id' | 'created_at'>
-        Update: Partial<Omit<Patient, 'id' | 'created_at'>>
-      }
-      consultations: {
-        Row: Consultation
-        Insert: Omit<Consultation, 'id' | 'created_at' | 'counselor' | 'patient'>
-        Update: Partial<Omit<Consultation, 'id' | 'created_at' | 'counselor' | 'patient'>>
-      }
-      recordings: {
-        Row: Recording
-        Insert: Omit<Recording, 'id' | 'created_at'>
-        Update: Partial<Omit<Recording, 'id' | 'created_at'>>
-      }
+      centers: { Row: Center; Insert: Omit<Center, 'id'>; Update: Partial<Omit<Center, 'id'>> }
+      sales_reps: { Row: SalesRep; Insert: Omit<SalesRep, 'id'>; Update: Partial<Omit<SalesRep, 'id'>> }
+      packages: { Row: Package; Insert: Omit<Package, 'id'>; Update: Partial<Omit<Package, 'id'>> }
+      calls: { Row: Call; Insert: Omit<Call, 'id' | 'created_at' | 'sales_rep'>; Update: Partial<Omit<Call, 'id' | 'created_at' | 'sales_rep'>> }
+      recordings: { Row: Recording; Insert: Omit<Recording, 'id' | 'created_at'>; Update: Partial<Omit<Recording, 'id' | 'created_at'>> }
     }
     Views: Record<string, never>
     Functions: Record<string, never>

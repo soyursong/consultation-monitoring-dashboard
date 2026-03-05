@@ -1,7 +1,7 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { Calendar } from "lucide-react"
+import { cn } from "@/lib/utils"
 
 interface DateRangePickerProps {
   period: string
@@ -16,21 +16,23 @@ const periods = [
 
 export function DateRangePicker({ period, onPeriodChange }: DateRangePickerProps) {
   return (
-    <div className="flex items-center gap-2">
-      <Calendar className="h-4 w-4 text-muted-foreground" />
-      <div className="flex rounded-lg border">
-        {periods.map((p) => (
-          <Button
-            key={p.value}
-            variant={period === p.value ? "default" : "ghost"}
-            size="sm"
-            className="rounded-none first:rounded-l-lg last:rounded-r-lg"
-            onClick={() => onPeriodChange(p.value)}
-          >
-            {p.label}
-          </Button>
-        ))}
-      </div>
+    <div className="flex gap-1 rounded-lg border bg-white p-1">
+      {periods.map((p) => (
+        <Button
+          key={p.value}
+          variant="ghost"
+          size="sm"
+          onClick={() => onPeriodChange(p.value)}
+          className={cn(
+            "h-8 px-3 text-xs",
+            period === p.value
+              ? "bg-slate-900 text-white hover:bg-slate-800 hover:text-white"
+              : "text-muted-foreground hover:text-foreground"
+          )}
+        >
+          {p.label}
+        </Button>
+      ))}
     </div>
   )
 }

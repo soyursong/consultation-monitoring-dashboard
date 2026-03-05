@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { Settings, Key, Database, Users } from "lucide-react"
+import { demoSalesReps } from "@/lib/demo-data"
 
 export default function SettingsPage() {
   return (
@@ -40,7 +41,6 @@ export default function SettingsPage() {
               <div className="flex gap-2">
                 <Badge variant="secondary">US (기본)</Badge>
                 <Badge variant="outline">JP</Badge>
-                <Badge variant="outline">EU (준비중)</Badge>
               </div>
             </div>
             <Button className="w-full">연결 테스트</Button>
@@ -73,52 +73,46 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
 
-        {/* 지점 관리 */}
+        {/* 센터 관리 */}
         <Card>
           <CardHeader>
             <div className="flex items-center gap-2">
               <Settings className="h-5 w-5" />
-              <CardTitle className="text-base">지점 관리</CardTitle>
+              <CardTitle className="text-base">센터 관리</CardTitle>
             </div>
-            <CardDescription>병원 지점 정보를 관리합니다</CardDescription>
+            <CardDescription>센터 정보를 관리합니다</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
-            {["강남점", "서초점"].map((branch) => (
-              <div key={branch} className="flex items-center justify-between rounded-lg border p-3">
-                <span className="font-medium">{branch}</span>
-                <Badge>활성</Badge>
-              </div>
-            ))}
+            <div className="flex items-center justify-between rounded-lg border p-3">
+              <span className="font-medium">풋케어센터 강남점</span>
+              <Badge>활성</Badge>
+            </div>
             <Separator />
             <div className="flex gap-2">
-              <Input placeholder="새 지점명" />
+              <Input placeholder="새 센터명" />
               <Button variant="outline" size="sm">추가</Button>
             </div>
           </CardContent>
         </Card>
 
-        {/* 사용자 관리 */}
+        {/* 담당자 관리 */}
         <Card>
           <CardHeader>
             <div className="flex items-center gap-2">
               <Users className="h-5 w-5" />
-              <CardTitle className="text-base">사용자 관리</CardTitle>
+              <CardTitle className="text-base">담당자 관리</CardTitle>
             </div>
-            <CardDescription>시스템 사용자 및 권한을 관리합니다</CardDescription>
+            <CardDescription>세일즈 담당자를 관리합니다</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
-            {[
-              { name: "관리자", email: "admin@clinic.com", role: "관리자" },
-              { name: "김서연", email: "kim@clinic.com", role: "실장" },
-              { name: "이지원", email: "lee@clinic.com", role: "상담사" },
-            ].map((user) => (
-              <div key={user.email} className="flex items-center justify-between rounded-lg border p-3">
+            {demoSalesReps.map((rep) => (
+              <div key={rep.id} className="flex items-center justify-between rounded-lg border p-3">
                 <div>
-                  <p className="text-sm font-medium">{user.name}</p>
-                  <p className="text-xs text-muted-foreground">{user.email}</p>
+                  <p className="text-sm font-medium">{rep.name}</p>
+                  <p className="text-xs text-muted-foreground">{rep.position}</p>
                 </div>
-                <Badge variant={user.role === "관리자" ? "default" : "secondary"}>
-                  {user.role}
+                <Badge variant={rep.position === '총괄실장' ? "default" : "secondary"}>
+                  {rep.position}
                 </Badge>
               </div>
             ))}
