@@ -1,4 +1,4 @@
-import type { Call, SalesRep, Center, Package, Recording, User, PlaudToken, PatientType, ReferralSource, CallStatus, PaymentStatus } from '@/lib/types/database'
+import type { Call, SalesRep, Center, Package, Recording, User, PlaudToken, PatientType, ReferralSource, CallStatus, PaymentStatus, ReviewStatus } from '@/lib/types/database'
 
 // 풋케어센터 센터 정보
 export const demoCenter: Center = {
@@ -111,6 +111,7 @@ export function generateDemoCalls(): Call[] {
       let paymentStatus: PaymentStatus
       let paymentAmount: number
       let isConfirmed: boolean
+      let reviewStatus: ReviewStatus
       let dropReason: string | null = null
 
       if (outcomeRand < repSkill) {
@@ -119,22 +120,22 @@ export function generateDemoCalls(): Call[] {
         const discount = 0.8 + seededRandom(seed + 7) * 0.2
         paymentAmount = Math.round(pkg.price * discount / 10000) * 10000
         isConfirmed = true
+        reviewStatus = 'reviewed'
       } else if (outcomeRand < repSkill + 0.15) {
         status = 'in_progress'
         paymentStatus = 'unpaid'
         paymentAmount = 0
         isConfirmed = true
+        reviewStatus = 'reviewed'
       } else {
         status = 'completed'
         paymentStatus = 'unpaid'
         paymentAmount = 0
         isConfirmed = seededRandom(seed + 8) < 0.7
+        const reviewRand = seededRandom(seed + 14)
+        reviewStatus = isConfirmed ? 'reviewed' : reviewRand < 0.7 ? 'unreviewed' : 'needs_edit'
         dropReason = dropReasons[Math.floor(seededRandom(seed + 9) * dropReasons.length)]
       }
-
-      const consultationScore = status === 'completed' && paymentStatus !== 'unpaid'
-        ? Math.floor(seededRandom(seed + 10) * 3) + 7
-        : Math.floor(seededRandom(seed + 10) * 5) + 4
 
       const durationMinutes = Math.floor(seededRandom(seed + 11) * 45) + 5
       const durationSeconds = durationMinutes * 60
@@ -143,6 +144,9 @@ export function generateDemoCalls(): Call[] {
       const hour = hours[Math.floor(seededRandom(seed + 12) * hours.length)]
       const minute = Math.floor(seededRandom(seed + 13) * 60)
       const callTime = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`
+
+      // 일부 데이터를 비활성화 처리 (테스트용)
+      const isActive = !(dayOffset === 5 && i === 0) && !(dayOffset === 10 && i === 1)
 
       calls.push({
         id: `call-${dayOffset}-${i}`,
@@ -155,17 +159,18 @@ export function generateDemoCalls(): Call[] {
         call_date: dateStr,
         call_time: callTime,
         duration_seconds: durationSeconds,
-        consultation_score: consultationScore,
         status,
         payment_status: paymentStatus,
         payment_amount: paymentAmount,
         drop_reason: dropReason,
         is_confirmed: isConfirmed,
+        review_status: reviewStatus,
         notes: paymentAmount > 0
           ? `${pkg.name} 상담 진행, 결제 완료`
           : dropReason
             ? `${pkg.name} 상담 - 이탈사유: ${dropReason}`
             : `${pkg.name} 상담 진행 중`,
+        is_active: isActive,
         created_at: dateStr,
         sales_rep: rep,
       })
@@ -248,4 +253,16 @@ export const patientTypeLabels: Record<PatientType, string> = {
 export const referralSourceLabels: Record<ReferralSource, string> = {
   ad: '광고',
   organic: '자연유입',
+}
+
+export const reviewStatusLabels: Record<ReviewStatus, string> = {
+  unreviewed: '미확인',
+  reviewed: '확인',
+  needs_edit: '수정필요',
+}
+
+export const reviewStatusColors: Record<ReviewStatus, string> = {
+  unreviewed: 'bg-yellow-100 text-yellow-800',
+  reviewed: 'bg-green-100 text-green-800',
+  needs_edit: 'bg-red-100 text-red-800',
 }
