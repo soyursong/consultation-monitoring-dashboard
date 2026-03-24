@@ -271,6 +271,11 @@ export default function DevicesPage() {
 
   return (
     <div className="space-y-6">
+      {/* 데모 안내 */}
+      <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+        현재 표시되는 디바이스와 데이터는 데모(가짜)입니다. 실제 PC에 MediRec 앱을 설치하면 자동으로 실제 데이터로 전환됩니다.
+      </div>
+
       {/* 헤더 */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>

@@ -5,10 +5,8 @@ import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 import {
   LayoutDashboard,
-  Users,
-  PhoneCall,
-  Brain,
   HardDrive,
+  FileAudio,
   Settings,
   LogOut,
   Footprints,
@@ -16,9 +14,6 @@ import {
 
 const navigation = [
   { name: "대시보드", href: "/dashboard", icon: LayoutDashboard },
-  { name: "세일즈 담당자", href: "/dashboard/reps", icon: Users },
-  { name: "상담 기록", href: "/dashboard/calls", icon: PhoneCall },
-  { name: "AI 분석", href: "/dashboard/ai-analysis", icon: Brain },
   { name: "디바이스 관리", href: "/dashboard/devices", icon: HardDrive },
   { name: "설정", href: "/dashboard/settings", icon: Settings },
 ]
@@ -33,7 +28,7 @@ export function Sidebar() {
         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500">
           <Footprints className="h-4 w-4 text-white" />
         </div>
-        <span className="text-lg font-bold text-white">풋케어 모니터링</span>
+        <span className="text-lg font-bold text-white">MediRec</span>
       </div>
 
       {/* Navigation */}
@@ -67,7 +62,7 @@ export function Sidebar() {
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium text-white truncate">관리자</p>
-            <p className="text-xs text-slate-400 truncate">풋케어센터 강남점</p>
+            <p className="text-xs text-slate-400 truncate">오블리브 풋센터</p>
           </div>
           <Link href="/login" className="text-slate-400 hover:text-white">
             <LogOut className="h-4 w-4" />
