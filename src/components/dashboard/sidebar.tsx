@@ -8,6 +8,7 @@ import {
   Users,
   PhoneCall,
   Brain,
+  HardDrive,
   Settings,
   LogOut,
   Footprints,
@@ -18,6 +19,7 @@ const navigation = [
   { name: "세일즈 담당자", href: "/dashboard/reps", icon: Users },
   { name: "상담 기록", href: "/dashboard/calls", icon: PhoneCall },
   { name: "AI 분석", href: "/dashboard/ai-analysis", icon: Brain },
+  { name: "디바이스 관리", href: "/dashboard/devices", icon: HardDrive },
   { name: "설정", href: "/dashboard/settings", icon: Settings },
 ]
 
